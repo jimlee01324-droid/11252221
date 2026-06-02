@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>留學生生存日記</title>
+<style>
+  body{
+    margin:0;
+    font-family:"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;
+    background:#f5f5f5;
+    color:#222;
+    line-height:1.7;
+  }
+  .container{
+    max-width:900px;
+    margin:30px auto;
+    padding:20px;
+  }
+  header{
+    border:1px solid #999;
+    background:#fff;
+    padding:20px;
+    margin-bottom:15px;
+  }
+  h1{margin:0 0 8px;font-size:30px;}
+  .game{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:15px;
+  }
+  .status,.story{
+    background:#fff;
+    border:1px solid #999;
+    padding:18px;
+  }
+  .status p{margin:8px 0;}
+  button{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:10px 12px;
+    margin:8px 0;
+    background:#fff;
+    border:1px solid #555;
+    cursor:pointer;
+    font-size:16px;
+  }
+  button:hover{background:#eee;}
+  .card{
+    border:1px solid #aaa;
+    padding:10px;
+    margin:10px 0;
+    background:#fafafa;
+  }
+  .small{font-size:14px;color:#555;}
+  @media(max-width:700px){.game{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>留學生生存日記</h1>
+    <div>生活模擬 + 輕度學習 + 多結局</div>
+  </header>
+
+  <div class="game">
+    <aside class="status">
+      <h2>目前狀態</h2>
+      <p>日期：第 <span id="day">1</span> 天</p>
+      <p>體力：<span id="energy">100</span> / 100</p>
+      <p>台灣味覺值：<span id="score">0</span> / 1000</p>
+      <p>記憶卡：<span id="cards">0</span> 張</p>
+      <hr>
+      <p class="small">展示重點：玩家白天探索台灣地點，獲得味覺記憶卡，晚上回宿舍測驗並累積分數。</p>
+    </aside>
+
+    <main class="story" id="story"></main>
+  </div>
+</div>
+
+<script>
+let day = 1;
+let energy = 100;
+let score = 0;
+let memoryCards = [];
+let learnedFoods = [];
+
+const story = document.getElementById('story');
+
+function updateStatus(){
+  document.getElementById('day').textContent = day;
+  document.getElementById('energy').textContent = energy;
+  document.getElementById('score').textContent = score;
+  document.getElementById('cards').textContent = memoryCards.length;
+}
+
+function show(title, text, buttons){
+  updateStatus();
+  story.innerHTML = `<h2>${title}</h2><p>${text.replace(/\n/g,'<br>')}</p>`;
+  buttons.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.textContent = b.text;
+    btn.onclick = b.action;
+    story.appendChild(btn);
+  });
+}
+
+function addCard(name, description, points){
+  memoryCards.push({name, description, points});
+  if(!learnedFoods.includes(name)) learnedFoods.push(name);
+}
+
+function start(){
+  show('開場',
+    '你是一名剛來台灣讀書的留學生。\n\n這學期，你要一邊適應台灣生活，一邊透過美食和文化累積「台灣味覺值」。',
+    [{text:'開始遊戲', action:dorm}]
+  );
+}
+
+function dorm(){
+  show('宿舍',
+    '你在宿舍醒來。今天要去哪裡探索台灣生活？',
+    [
+      {text:'前往地圖', action:map},
+      {text:'睡前回顧', action:review}
+    ]
+  );
+}
+
+function map(){
+  show('地圖',
+    '請選擇今天想去的地方。每次行動都會消耗體力。',
+    [
+      {text:'去夜市（-25體力）', action:nightMarket},
+      {text:'去傳統市場（-20體力）', action:market},
+      {text:'去教室（-15體力）', action:classroom},
+      {text:'返回宿舍', action:dorm}
+    ]
+  );
+}
+
+function checkEnergy(){
+  if(energy <= 0){
+    energy = 0;
+    show('體力耗盡', '你太累了，只能先回宿舍休息。', [{text:'回宿舍', action:dorm}]);
+    return false;
+  }
+  return true;
+}
+
+function nightMarket(){
+  energy -= 25;
+  if(!checkEnergy()) return;
+  show('夜市',
+    '你來到熱鬧的夜市，空氣中充滿各種香味。前方有一攤臭豆腐。',
+    [
+      {text:'勇敢嘗試臭豆腐', action:stinkyTofu},
+      {text:'回到地圖', action:map}
+    ]
+  );
+}
+
+function stinkyTofu(){
+  energy -= 10;
+  addCard('臭豆腐','臭豆腐是台灣夜市常見小吃，特色是氣味濃烈、外酥內軟。',50);
+  show('獲得記憶卡：臭豆腐',
+    '你吃下第一口臭豆腐。味道比想像中溫和，外皮酥脆，裡面很嫩。\n\n獲得 1 張味覺記憶卡。',
+    [{text:'繼續探索', action:map}]
+  );
+}
+
+function market(){
+  energy -= 20;
+  if(!checkEnergy()) return;
+  addCard('鳳梨','鳳梨是台灣常見水果，也常被做成鳳梨酥。',35);
+  show('傳統市場',
+    '市場阿姨熱情地向你介紹鳳梨。你學到台灣市場裡常見的叫賣文化。\n\n獲得記憶卡：鳳梨。',
+    [{text:'回到地圖', action:map}]
+  );
+}
+
+function classroom(){
+  energy -= 15;
+  if(!checkEnergy()) return;
+  addCard('台灣電影','透過電影可以認識台灣的校園生活、城市風景與文化記憶。',30);
+  show('教室',
+    '今天社團播放台灣電影。你從同學的討論中認識到更多台灣生活文化。\n\n獲得記憶卡：台灣電影。',
+    [{text:'回到地圖', action:map}]
+  );
+}
+
+function review(){
+  if(memoryCards.length === 0){
+    show('睡前回顧',
+      '今天還沒有獲得記憶卡。建議先去探索一個地點。',
+      [{text:'前往地圖', action:map}]
+    );
+    return;
+  }
+  let html = '<h2>睡前回顧</h2><p>今天你獲得的記憶卡：</p>';
+  memoryCards.forEach(c=>{
+    html += `<div class="card"><strong>${c.name}</strong><br>${c.description}</div>`;
+  });
+  html += '<p>接下來進行簡單測驗。</p>';
+  story.innerHTML = html;
+  const btn = document.createElement('button');
+  btn.textContent = '開始測驗';
+  btn.onclick = quiz;
+  story.appendChild(btn);
+  updateStatus();
+}
+
+function quiz(){
+  show('睡前測驗',
+    '問題：臭豆腐最常出現在哪一種台灣場景？',
+    [
+      {text:'夜市', action:()=>finishQuiz(true)},
+      {text:'機場', action:()=>finishQuiz(false)},
+      {text:'銀行', action:()=>finishQuiz(false)}
+    ]
+  );
+}
+
+function finishQuiz(correct){
+  let todayScore = memoryCards.reduce((sum,c)=>sum+c.points,0);
+  if(correct){
+    score += todayScore;
+  }else{
+    score += Math.floor(todayScore * 0.5);
+  }
+  memoryCards = [];
+  let result = correct ? '答對了！今天獲得完整分數。' : '答錯了。今天只獲得一半分數。';
+  show('今日結算',
+    `${result}\n\n目前總味覺值：${score}\n\n這就是目前遊戲核心流程：探索 → 獲得記憶卡 → 睡前測驗 → 累積分數。`,
+    [
+      {text:'進入下一天', action:nextDay},
+      {text:'查看目前進度結局', action:ending}
+    ]
+  );
+}
+
+function nextDay(){
+  day += 1;
+  energy = 100;
+  if(day > 15){
+    ending();
+  }else{
+    dorm();
+  }
+}
+
+function ending(){
+  let title = '普通留學生結局';
+  let text = '你完成了目前展示版本的台灣生活體驗。';
+  if(score >= 1000){
+    title = '台灣生活畢業結局';
+    text = '你累積了足夠的台灣味覺值，成功完成台灣生活畢業。';
+  }else if(score >= 300){
+    title = '文化適應中結局';
+    text = '你已經開始習慣台灣生活，也累積了一些美食與文化記憶。';
+  }
+  show(title, text, [{text:'重新開始', action:()=>location.reload()}]);
+}
+
+start();
+</script>
+</body>
+</html>
